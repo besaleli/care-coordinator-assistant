@@ -19,6 +19,16 @@ services:
       - ./care-app:/app
     networks:
       - cca_network
+  ml:
+    build:
+      context: care-ml
+      dockerfile: Dockerfile
+    ports:
+      - 8000:8000
+    volumes:
+      - ./care-ml:/app
+    networks:
+      - cca_network
 
 networks:
   cca_network:
