@@ -37,4 +37,4 @@ RUN poetry install \
 
 COPY . /app
 
-CMD ["streamlit", "run", "care_app/main.py"]
+CMD ["streamlit", "run", "main.py"]

@@ -19,17 +19,37 @@ services:
       - ./care-app:/app
     networks:
       - cca_network
+    depends_on:
+      - api
+      - ml
   ml:
     build:
       context: care-ml
       dockerfile: Dockerfile
     ports:
-      - 8000:8000
+      - 3050:3050
     volumes:
       - ./care-ml:/app
     networks:
       - cca_network
+    depends_on:
+      - chroma
+      - api
+  chroma:
+    image: chromadb/chroma:0.5.17
+    ports:
+      - 8000:8000
+    volumes:
+      - chroma-data:/chroma/chroma
+    environment:
+      - IS_PERSISTENT=TRUE
+      - PERSIST_DIRECTORY=/chroma/chroma
+      - ANONYMIZED_TELEMETRY=FALSE
 
 networks:
   cca_network:
     driver: bridge
+
+volumes:
+  chroma-data:
+    driver: local
