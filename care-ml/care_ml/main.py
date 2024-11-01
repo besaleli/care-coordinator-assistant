@@ -6,4 +6,4 @@ app = FastAPI()
 @app.get('/')
 async def index():
     """Homepage"""
-    return 'API is up and running!'
+    return 'ML services are up and running! <3'
