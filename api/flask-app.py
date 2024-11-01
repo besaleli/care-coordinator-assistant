@@ -8,10 +8,10 @@ def index():
     """Homepage"""
     return 'API is up and running!'
 
-@app.route('/patient/<patient_id>', methods=['GET'])
-def get_data(patient_id: str):
+@app.route('/patient/<int:patient_id>', methods=['GET'])
+def get_data(patient_id: int):
     """Get data by patient ID"""
-    if int(patient_id) == 1:
+    if patient_id == 1:
         data = {
             "id": 1,
             "name": "John Doe",
