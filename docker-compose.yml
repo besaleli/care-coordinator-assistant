@@ -1,0 +1,15 @@
+services:
+  api:
+    build:
+      context: api
+      dockerfile: Dockerfile
+    ports:
+      - 5050:5050
+    volumes:
+      - ./api:/app
+    networks:
+      - cca_network
+
+networks:
+  cca_network:
+    driver: bridge
