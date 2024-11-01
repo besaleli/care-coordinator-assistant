@@ -9,6 +9,16 @@ services:
       - ./api:/app
     networks:
       - cca_network
+  care-app:
+    build:
+      context: care-app
+      dockerfile: Dockerfile
+    ports:
+      - 8501:8501
+    volumes:
+      - ./care-app:/app
+    networks:
+      - cca_network
 
 networks:
   cca_network:
