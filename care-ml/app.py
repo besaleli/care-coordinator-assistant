@@ -1,13 +1,24 @@
 """Main app module"""
 import os
 from typing import List, Self
+import time
 import requests
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, model_validator, field_validator
 import streamlit as st
-from care_ml.utils import fake_stream
 from care_ml.ml.message import Message, Role
 
 ML_URL = os.getenv('ML_URL')
+
+class CustomerFacingMessage(Message):
+    """Customer-facing message."""
+    @field_validator('role')
+    @classmethod
+    def validate_role(cls, v):
+        """Make sure customer-facing chat history does not contain a system message."""
+        if v == Role.SYSTEM:
+            raise ValueError("Customer-facing chat history must not contain a system message")
+
+        return v
 
 class ChatHistory(BaseModel):
     """Chat history handler."""
@@ -16,22 +27,20 @@ class ChatHistory(BaseModel):
         if "messages" not in st.session_state:
             st.session_state.messages = []
 
-        if any(i["role"] == Role.SYSTEM for i in st.session_state.messages):
-            raise ValueError("Customer-facing chat history must not contain a system message")
-
         return self
 
     @property
     def messages(self) -> List[Message]:
-        return [Message(**i) for i in st.session_state.messages]
+        """Accessor for chat history stored in streamlit state dictionary."""
+        return [CustomerFacingMessage(**i) for i in st.session_state.messages]
 
-    def append(self, m: Message) -> None:
+    def _append(self, m: Message) -> None:
         if m.role == Role.SYSTEM:
             raise ValueError("Customer-facing chat history must not contain a system message")
 
         st.session_state.messages.append(m.model_dump())
 
-    def call_ml_services(self, messages: List[Message]) -> Message:
+    def _call_ml_services(self, messages: List[Message]) -> Message:
         url = f"{ML_URL}/message/create"
         print(url)
         ml_response = requests.post(
@@ -42,18 +51,20 @@ class ChatHistory(BaseModel):
             timeout=30
             )
 
-        return Message(**ml_response.json()["message"])
+        return CustomerFacingMessage(**ml_response.json()["message"])
 
     def step(self, prompt: str):
+        """Complete a dialogue step with the given chat history."""
         st.chat_message(Role.USER).markdown(prompt)
 
-        self.append(Message(role=Role.USER, content=prompt))
-        response = self.call_ml_services(self.messages)
+        self._append(Message(role=Role.USER, content=prompt))
+        response = self._call_ml_services(self.messages)
+        with st.spinner("typing..."):
+            time.sleep(1)
+            with st.chat_message(response.role):
+                st.markdown(response.content)
 
-        with st.chat_message(response.role):
-            st.write_stream(fake_stream(response.content))
-
-        self.append(response)
+        self._append(response)
 
 st.title("Care Coordinator Assistant 🧑‍⚕️")
 
