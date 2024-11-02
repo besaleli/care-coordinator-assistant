@@ -9,25 +9,28 @@ services:
       - ./api:/app
     networks:
       - cca_network
-  care-app:
+  frontend:
     build:
-      context: care-app
+      context: care-ml
       dockerfile: Dockerfile
+    env_file:
+      - .env
     ports:
       - 8501:8501
     volumes:
-      - ./care-app:/app
-    env_file:
-      - care-ml/.env
+      - ./care-ml:/app
     networks:
       - cca_network
     depends_on:
       - api
       - ml
+    command: streamlit run app.py
   ml:
     build:
       context: care-ml
       dockerfile: Dockerfile
+    env_file:
+      - .env
     ports:
       - 3050:3050
     volumes:
@@ -35,23 +38,8 @@ services:
     networks:
       - cca_network
     depends_on:
-      - chroma
       - api
-  chroma:
-    image: chromadb/chroma:0.5.17
-    ports:
-      - 8000:8000
-    volumes:
-      - chroma-data:/chroma/chroma
-    environment:
-      - IS_PERSISTENT=TRUE
-      - PERSIST_DIRECTORY=/chroma/chroma
-      - ANONYMIZED_TELEMETRY=FALSE
 
 networks:
   cca_network:
     driver: bridge
-
-volumes:
-  chroma-data:
-    driver: local

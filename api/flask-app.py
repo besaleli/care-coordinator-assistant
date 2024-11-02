@@ -49,9 +49,9 @@ def get_data(patient_id: int):
                     }
             ]
         }
-        return data
+        return data, 200
 
-    return 'Patient not found'
+    return 'Patient not found', 404
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5050, debug=True)
