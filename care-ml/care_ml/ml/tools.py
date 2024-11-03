@@ -1,6 +1,6 @@
 """Tool definitions."""
 from typing import Optional, Literal
-from datetime import datetime
+from datetime import datetime, timedelta
 from .ehr_connector import Patient
 from .db import init_db
 
@@ -60,6 +60,39 @@ SEARCH_PROVIDER = {
                 'timestamp': {
                     'type': 'string',
                     'description': 'Desired appointment timestamp. Optional. Format: MM/DD/YYYY HH:MM:SS.'
+                },
+            }
+        }
+    }
+}
+
+BOOK_APPOINTMENT = {
+    'type': 'function',
+    'function': {
+        'name': 'book_appointment',
+        'description': 'Book an appointment.',
+        'parameters': {
+            'type': 'object',
+            'properties': {
+                'provider_first_name': {
+                    'type': 'string',
+                    'description': 'First name of the provider. Case insensitive.'
+                },
+                'provider_last_name': {
+                    'type': 'string',
+                    'description': 'Last name of the provider. Case insensitive.'
+                },
+                'location': {
+                    'type': 'string',
+                    'description': 'Location name'
+                },
+                'appointment_type': {
+                    'type': 'string',
+                    'description': 'Appointment type. Either NEW or EXISTING.'
+                },
+                'timestamp': {
+                    'type': 'string',
+                    'description': 'Desired appointment timestamp. Must use the format: MM/DD/YYYY HH:MM:SS.'
                 },
             }
         }
@@ -134,6 +167,8 @@ def search_available_providers(
         JOIN departments d ON p.id = d.provider_id
         WHERE 1=1
     """
+    # Not parameterizing the query is totally unacceptable and a massive security issue, but would be
+    # easily solved when this code is refactored to use an ORM
 
     # Add time-based filters only if timestamp is provided
     if ts:
@@ -186,7 +221,41 @@ def search_available_providers(
 
     return available_providers
 
+def book_appointment(
+    provider_first_name: str,
+    provider_last_name: str,
+    location: str,
+    appointment_type: Literal['NEW', 'EXISTING'],
+    timestamp: str,
+    ):
+    # confirm provider is available
+    providers = search_available_providers(
+        appointment_type=appointment_type,
+        first_name=provider_first_name,
+        last_name=provider_last_name,
+        location=location,
+        timestamp=timestamp
+        )
+
+    if not providers:
+        return 'Provider not found or not available at that time. Try again.'
+
+    # if existing appointment, make sure patient has seen provider before in last 5 years
+    patient_data = Patient.get_by_id(1)
+    ts = datetime.strptime(timestamp, '%m/%d/%Y %H:%M:%S')
+    if appointment_type == 'EXISTING':
+        if not any(appt.timestamp < ts - timedelta(days=1825) for appt in patient_data.appointments if f"{provider_first_name} {provider_last_name}" in appt.provider):
+            return 'Patient has not seen provider in last 5 years. You must schedule a NEW appointment.'
+
+    # if new appointment, make sure patient has not had an appointment in the last 5 years
+    if appointment_type == 'NEW':
+        if any(appt.timestamp < ts - timedelta(days=1825) for appt in patient_data.appointments):
+            return 'Patient has had an appointment in the last 5 years. You must schedule an EXISTING appointment.'
+
+    return 'Appointment scheduled.'
+
 TOOL_CALL_MAP = {
     'confirm_name_dob': confirm_name_dob,
-    'search_available_providers': search_available_providers
+    'search_available_providers': search_available_providers,
+    'book_appointment': book_appointment
 }

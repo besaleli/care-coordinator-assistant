@@ -13,6 +13,8 @@ services:
     build:
       context: care-ml
       dockerfile: Dockerfile
+      args:
+        - ENV=ML
     env_file:
       - .env
     ports:
@@ -29,6 +31,8 @@ services:
     build:
       context: care-ml
       dockerfile: Dockerfile
+      args:
+        - ENV=ML
     env_file:
       - .env
     ports:

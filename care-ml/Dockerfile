@@ -25,7 +25,9 @@ RUN apt-get update && apt-get install -y \
 RUN pip install -U pip setuptools && \
     pip install "poetry==${POETRY_VERSION}"
 
-FROM build 
+FROM build
+
+ARG ENV=DEV
 
 COPY poetry.lock pyproject.toml /app/
 
@@ -33,7 +35,8 @@ RUN poetry install \
     --no-cache \
     --no-root \
     --no-interaction \
-    --no-ansi
+    --no-ansi \
+    $(if [ "$ENV" = "DEV" ]; then echo "--with dev"; fi)
 
 COPY . /app
 

@@ -5,7 +5,7 @@ from functools import cached_property
 from openai import AsyncOpenAI
 from pydantic import BaseModel
 from .message import Message, ChatHistory, Role
-from .tools import TOOL_CALL_MAP, CONFIRM_NAME_DOB, SEARCH_PROVIDER
+from .tools import TOOL_CALL_MAP, CONFIRM_NAME_DOB, SEARCH_PROVIDER, BOOK_APPOINTMENT
 from ..env_settings import OPENAI_API_KEY
 
 class Pipeline(BaseModel):
@@ -32,7 +32,7 @@ class Pipeline(BaseModel):
                 temperature=0,
                 top_p=1,
                 max_tokens=512,
-                tools=[CONFIRM_NAME_DOB, SEARCH_PROVIDER]
+                tools=[CONFIRM_NAME_DOB, SEARCH_PROVIDER, BOOK_APPOINTMENT]
             )
         )
 
