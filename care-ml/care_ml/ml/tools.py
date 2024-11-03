@@ -244,12 +244,12 @@ def book_appointment(
     patient_data = Patient.get_by_id(1)
     ts = datetime.strptime(timestamp, '%m/%d/%Y %H:%M:%S')
     if appointment_type == 'EXISTING':
-        if not any(appt.timestamp < ts - timedelta(days=1825) for appt in patient_data.appointments if f"{provider_first_name} {provider_last_name}" in appt.provider):
+        if not any(appt.timestamp > ts - timedelta(days=1825) for appt in patient_data.appointments if f"{provider_first_name} {provider_last_name}" in appt.provider):
             return 'Patient has not seen provider in last 5 years. You must schedule a NEW appointment.'
 
     # if new appointment, make sure patient has not had an appointment in the last 5 years
     if appointment_type == 'NEW':
-        if any(appt.timestamp < ts - timedelta(days=1825) for appt in patient_data.appointments):
+        if any(appt.timestamp > ts - timedelta(days=1825) for appt in patient_data.appointments):
             return 'Patient has had an appointment in the last 5 years. You must schedule an EXISTING appointment.'
 
     return 'Appointment scheduled.'
